@@ -10,18 +10,35 @@ import Foundation
 
 extension Data {
     func toInt32() -> Int32 {
-        var int = Int32()
-        let buffer = UnsafeMutableBufferPointer(start: &int, count: 1)
-        _ = self.copyBytes(to: buffer)
-        
-        return int.byteSwapped
+        // Controleer of de data voldoende bytes bevat
+        guard self.count >= MemoryLayout<Int32>.size else {
+            // Je kunt hier een default waarde retourneren of een fout afhandelen
+            return 0
+        }
+        // Gebruik withUnsafeBytes om veilig de bytes te lezen
+        return self.withUnsafeBytes { ptr in
+            // Laad de bytes als Int32 en voer byteSwap uit indien nodig
+            ptr.load(as: Int32.self).byteSwapped
+        }
     }
 }
 
 extension Data {
-    func toString()->String?{
-        if let string = String(data: self, encoding: String.Encoding.utf8){
-            return string
+    func toString() -> String? {
+        return String(data: self, encoding: .utf8)
+    }
+}
+
+extension Date {
+    // Initialiseert tijd vanuit een string zoals "1990-01-01T00:00:00-00:00"
+    init?(_ string: String) {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        if let date = formatter.date(from: string) {
+            self = date
         } else {
             return nil
         }
@@ -29,102 +46,78 @@ extension Data {
 }
 
 extension Date {
-    //initilizes time from string "1990-01-01T00:00:00-00:00"
-    init?(_ string: String){
-        
-        let RFC3339DateFormatter = DateFormatter()
-        RFC3339DateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        RFC3339DateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
-        RFC3339DateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-        
-        let date = RFC3339DateFormatter.date(from: string)
-        
-        if date == nil {
-            return nil
-        }
-        self = date!
-    }
-}
-
-extension Date {
     var oscTimetag: Timetag {
-        get {
-            return Timetag(Date().timeIntervalSince(Date("1900-01-01T00:00:00-00:00")!) * 0x1_0000_0000)
-        }
+        return Timetag(self.timeIntervalSince(Date("1900-01-01T00:00:00-00:00")!) * 0x1_0000_0000)
     }
 }
 
 extension Int32 {
     func toData() -> Data {
         var int = self.bigEndian
-        let buffer = UnsafeBufferPointer(start: &int, count: 1)
-        return Data(buffer: buffer)
+        return withUnsafeBytes(of: &int) { Data($0) }
     }
 }
 
 extension UInt32 {
     func toData() -> Data {
         var int = self.bigEndian
-        let buffer = UnsafeBufferPointer(start: &int, count: 1)
-        return Data(buffer: buffer)
+        return withUnsafeBytes(of: &int) { Data($0) }
     }
 }
 
 extension Int64 {
     func toData() -> Data {
         var int = self.bigEndian
-        let buffer = UnsafeBufferPointer(start: &int, count: 1)
-        return Data(buffer: buffer)
+        return withUnsafeBytes(of: &int) { Data($0) }
     }
 }
+
 extension String {
-    func toData()->Data{
-        return self.data(using: String.Encoding.utf8)!
+    func toData() -> Data {
+        return self.data(using: .utf8)!
     }
     
-    // add padding to string
-    func toDataBase32()->Data {
-        var data = self.data(using: String.Encoding.utf8)!
-        var value:UInt8 = 0
-        
-        for _ in 1...4-data.count%4 {
+    // Voeg padding toe aan string om een lengte te bereiken die een veelvoud van 4 is
+    func toDataBase32() -> Data {
+        var data = self.data(using: .utf8)!
+        var value: UInt8 = 0
+        let padding = (4 - data.count % 4) % 4
+        for _ in 0..<padding {
             data.append(&value, count: 1)
         }
         return data
     }
-    
 }
+
 extension String {
     func dataFromHexString() -> Data {
         var data = Data()
-        
         let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
-        regex.enumerateMatches(in: self, options: [], range: NSMakeRange(0, self.count)) { match, flags, stop in
-            let byteString = (self as NSString).substring(with: match!.range)
-            let num = UInt8(byteString.withCString { strtoul($0, nil, 16) })
-            data.append([num], count: 1)
+        regex.enumerateMatches(in: self, options: [], range: NSRange(location: 0, length: self.utf16.count)) { match, _, _ in
+            if let matchRange = match?.range {
+                let byteString = (self as NSString).substring(with: matchRange)
+                if let num = UInt8(byteString, radix: 16) {
+                    data.append(num)
+                }
+            }
         }
-        
         return data
     }
-    
 }
+
 extension String {
-    //returns substring at the specified character index
-    subscript(index: Int)->String? {
-        get {
-            if index > self.count - 1 || index < 0 {
-                return nil
-            }
-            let charIndex = self.index(self.startIndex, offsetBy: index)
-            let char = self[charIndex]
-            
-            return String(char)
+    // Retourneert substring op de opgegeven karakterindex
+    subscript(index: Int) -> String? {
+        if index < 0 || index >= self.count {
+            return nil
         }
+        let charIndex = self.index(self.startIndex, offsetBy: index)
+        return String(self[charIndex])
     }
 }
+
 extension Array {
-    public subscript (safe index: UInt) -> Element? {
+    public subscript(safe index: UInt) -> Element? {
         return Int(index) < count ? self[Int(index)] : nil
     }
 }

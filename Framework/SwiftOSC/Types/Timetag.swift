@@ -18,11 +18,8 @@ extension Timetag: OSCType {
         }
     }
     public var data: Data {
-        get {
-            var int = self.bigEndian
-            let buffer = UnsafeBufferPointer(start: &int, count: 1)
-            return Data(buffer: buffer)
-        }
+        var int = self.bigEndian
+        return withUnsafeBytes(of: &int) { Data($0) }
     }
     public var secondsSince1900: Double {
         get {
@@ -45,11 +42,11 @@ extension Timetag: OSCType {
     public init(secondsSince1900 seconds: Double){
         self = UInt64(seconds * 0x1_0000_0000)
     }
-    init(_ data: Data){
-        var int = UInt64()
-        let buffer = UnsafeMutableBufferPointer(start: &int, count: 1)
-        _ = data.copyBytes(to: buffer)
-        
-        self =  int.byteSwapped
+    public init(_ data: Data) {
+        var int: UInt64 = 0
+        _ = withUnsafeMutableBytes(of: &int) { buffer in
+            data.copyBytes(to: buffer)
+        }
+        self = int.byteSwapped
     }
 }

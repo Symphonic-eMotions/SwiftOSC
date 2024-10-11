@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol OSCServerDelegate: class {
+public protocol OSCServerDelegate: AnyObject {
     func didReceive(_ data: Data)
     func didReceive(_ bundle: OSCBundle)
     func didReceive(_ message: OSCMessage)
