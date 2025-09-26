@@ -44,4 +44,7 @@
          location = "group:macOS/macOS.xcodeproj">
       </FileRef>
    </Group>
+   <FileRef
+      location = "group:Package.swift">
+   </FileRef>
 </Workspace>
