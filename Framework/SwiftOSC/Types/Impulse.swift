@@ -8,23 +8,13 @@
 
 import Foundation
 
-public struct Impulse {
-    public init(){
-        
-    }
+public struct Impulse: Sendable {
+    public init() { }
 }
 
 extension Impulse: OSCType {
-    public var tag: String {
-        get {
-            return "I"
-        }
-    }
-    public var data: Data {
-        get {
-            return Data()
-        }
-    }
+    public var tag: String { "I" }
+    public var data: Data { Data() }
 }
 
 public let impulse = Impulse()
