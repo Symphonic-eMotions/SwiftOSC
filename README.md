@@ -1,5 +1,5 @@
 # SwiftOSC v1.4
-SeM relase tag 1.4.2
+SeM relase tag 1.4.3
 
 [![Version](https://img.shields.io/cocoapods/v/SwiftOSC.svg?style=flat)](http://cocoapods.org/pods/SwiftOSC)
 [![License](https://img.shields.io/cocoapods/l/SwiftOSC.svg?style=flat)](https://github.com/devinroth/SwiftOSC/blob/master/LICENSE)
