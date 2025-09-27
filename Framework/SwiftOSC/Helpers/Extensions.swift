@@ -10,14 +10,14 @@ import Foundation
 
 extension Data {
     func toInt32() -> Int32 {
-        // Controleer of de data voldoende bytes bevat
+        // Check if the data contains enough bytes
         guard self.count >= MemoryLayout<Int32>.size else {
             // Je kunt hier een default waarde retourneren of een fout afhandelen
             return 0
         }
-        // Gebruik withUnsafeBytes om veilig de bytes te lezen
+        // Use withUnsafeBytes to safely read the bytes
         return self.withUnsafeBytes { ptr in
-            // Laad de bytes als Int32 en voer byteSwap uit indien nodig
+            // Load the bytes as Int32 and perform byteSwap if needed
             ptr.load(as: Int32.self).byteSwapped
         }
     }
@@ -30,7 +30,7 @@ extension Data {
 }
 
 extension Date {
-    // Initialiseert tijd vanuit een string zoals "1990-01-01T00:00:00-00:00"
+    // Initialize time from a string like "1990-01-01T00:00:00-00:00"
     init?(_ string: String) {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -77,7 +77,7 @@ extension String {
         return self.data(using: .utf8)!
     }
     
-    // Voeg padding toe aan string om een lengte te bereiken die een veelvoud van 4 is
+    // Add padding to string to reach a length that is a multiple of 4
     func toDataBase32() -> Data {
         var data = self.data(using: .utf8)!
         var value: UInt8 = 0
@@ -106,7 +106,7 @@ extension String {
 }
 
 extension String {
-    // Retourneert substring op de opgegeven karakterindex
+    // Returns substring at the specified character index
     subscript(index: Int) -> String? {
         if index < 0 || index >= self.count {
             return nil
