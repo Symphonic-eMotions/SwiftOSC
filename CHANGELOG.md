@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## SeM release tag 1.0.0
+### Added
+- Bumped iOS min target to 16.0, macOS to 13.5; set MARKETING_VERSION = 1.4.0. Added shared iOS scheme; updated OSCMonitor scheme to LastUpgradeVersion 1540. Enabled Module Verifier; modernized runpath settings and raised project objectVersion.
+- OSCServerDelegate: class → AnyObject. Safer/cleaner helpers (e.g., Data.toInt32() via withUnsafeBytes, streamlined toString(), simpler Date RFC3339 init). Timetag.data and init(_:) rewritten with safe byte access.
+- C fix int yudpsocket_client() → int yudpsocket_client(void).
+
 ## [1.4.0] - Unreleased
 ### Added
 - Support for watchOS and tvOS
