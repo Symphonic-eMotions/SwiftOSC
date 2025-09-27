@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-int yudpsocket_server(const char *host, int port); // voorbeeld
+int yudpsocket_server(const char *host, int port);
 int yudpsocket_recvv(int sockfd, char *buf, int len, int timeout_ms);
 
 #ifdef __cplusplus

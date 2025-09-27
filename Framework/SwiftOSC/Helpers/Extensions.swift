@@ -29,7 +29,7 @@ extension Data {
 }
 
 extension Date {
-    // Initialize time from a string like "1990-01-01T00:00:00-00:00"
+    // Initialize time from a string "1990-01-01T00:00:00-00:00"
     init?(_ string: String) {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")

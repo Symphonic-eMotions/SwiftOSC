@@ -60,18 +60,17 @@ open class OSCServer: @unchecked Sendable {
     
     func decodePacket(_ data: Data) {
         autoreleasepool {
-            let delegate = self.delegate  // voorkom 'self' capture in closure
+            let delegate = self.delegate
             DispatchQueue.main.async { @Sendable in
                 delegate?.didReceive(data)
             }
 
             // Message vs Bundle
-            if data.first == 0x2f { // "/" ?
+            if data.first == 0x2f {
                 if let message = decodeMessage(data) {
                     self.sendToDelegate(message)
                 }
             } else if data.count > 8 {
-                // Gebruik half-open range op basis van Data-indices
                 let start = data.startIndex
                 let header = data.subdata(in: start ..< start + 8)
                 if "#bundle\0".toData() == header {
@@ -222,6 +221,3 @@ open class OSCServer: @unchecked Sendable {
         _ = server.close()
     }
 }
-
-
-
