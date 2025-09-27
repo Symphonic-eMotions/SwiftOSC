@@ -1,12 +1,4 @@
-//
-//  Package.swift
-//  
-//
-//  Created by Frans-Jan Wind on 27/09/2025.
-//
-
-
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
@@ -18,9 +10,18 @@ let package = Package(
         .library(name: "SwiftOSC", targets: ["SwiftOSC"])
     ],
     targets: [
+        // C target (C/ObjC/CPP-only)
+        .target(
+            name: "CYSockets",
+            path: "Framework/CYSockets",
+            publicHeadersPath: "include"
+        ),
+        // Swift target (Swift-only) that depends on the C target
         .target(
             name: "SwiftOSC",
-            path: "Framework/iOS/SwiftOSC"
-        )
+            dependencies: ["CYSockets"],
+            path: "Framework/SwiftOSC",
+            exclude: ["Info.plist"]
+        ),
     ]
 )
