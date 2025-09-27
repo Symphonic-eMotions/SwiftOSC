@@ -1,17 +1,22 @@
 import Foundation
 
+@MainActor
 public protocol OSCServerDelegate: AnyObject {
     func didReceive(_ data: Data)
     func didReceive(_ bundle: OSCBundle)
     func didReceive(_ message: OSCMessage)
 }
+
 extension OSCServerDelegate {
     public func didReceive(_ data: Data){}
     public func didReceive(_ bundle: OSCBundle){}
     public func didReceive(_ message: OSCMessage){}
 }
 
-open class OSCServer {
+extension OSCMessage: @unchecked Sendable {}
+extension OSCBundle:  @unchecked Sendable {}
+
+open class OSCServer: @unchecked Sendable {
     open var address: String {
         didSet {
             _ = server.close()
@@ -42,35 +47,35 @@ open class OSCServer {
         running = false
     }
     func run() {
-        DispatchQueue.global().async{
-            while true {
-                let (data,_,_) = self.server.recv(9216)
-                if let data = data {
-                    if self.running {
-                        let data = Data(data)
-                        self.decodePacket(data)
-                    }
+        DispatchQueue.global().async { [weak self] in
+            while let strongSelf = self {
+                let (data, _, _) = strongSelf.server.recv(9216)
+                if let data = data, strongSelf.running {
+                    let packet = Data(data)
+                    strongSelf.decodePacket(packet)
                 }
             }
         }
     }
     
-    func decodePacket(_ data: Data){
-        
-        autoreleasepool{
-        
-            DispatchQueue.main.async {
-                self.delegate?.didReceive(data)
+    func decodePacket(_ data: Data) {
+        autoreleasepool {
+            let delegate = self.delegate  // voorkom 'self' capture in closure
+            DispatchQueue.main.async { @Sendable in
+                delegate?.didReceive(data)
             }
-            
-            if data[0] == 0x2f { // check if first character is "/"
-                if let message = decodeMessage(data){
+
+            // Message vs Bundle
+            if data.first == 0x2f { // "/" ?
+                if let message = decodeMessage(data) {
                     self.sendToDelegate(message)
                 }
-
-            } else if data.count > 8 {//make sure we have at least 8 bytes before checking if a bundle.
-                if "#bundle\0".toData() == data.subdata(in: Range(0...7)){//matches string #bundle
-                    if let bundle = decodeBundle(data){
+            } else if data.count > 8 {
+                // Gebruik half-open range op basis van Data-indices
+                let start = data.startIndex
+                let header = data.subdata(in: start ..< start + 8)
+                if "#bundle\0".toData() == header {
+                    if let bundle = decodeBundle(data) {
                         self.sendToDelegate(bundle)
                     }
                 }
@@ -78,8 +83,7 @@ open class OSCServer {
                 NSLog("Invalid OSCPacket: data must begin with #bundle\\0 or /")
             }
         }
-        
-}
+    }
     
     func decodeBundle(_ data: Data)->OSCBundle? {
         
@@ -182,32 +186,42 @@ open class OSCServer {
         }
         return message
     }
-    func sendToDelegate(_ element: OSCElement){
-        DispatchQueue.main.async {
-            if let message = element as? OSCMessage {
-                self.delegate?.didReceive(message)
+
+    func sendToDelegate(_ element: OSCElement) {
+        let delegate = self.delegate
+
+        if let message = element as? OSCMessage {
+            DispatchQueue.main.async { @Sendable in
+                delegate?.didReceive(message)
             }
-            if let bundle = element as? OSCBundle {
-                
-                // send to delegate at the correct time
-                if bundle.timetag.secondsSinceNow < 0 {
-                    self.delegate?.didReceive(bundle)
-                    for element in bundle.elements {
-                        self.sendToDelegate(element)
+            return
+        }
+
+        if let bundle = element as? OSCBundle {
+            let delay = bundle.timetag.secondsSinceNow
+
+            if delay < 0 {
+                DispatchQueue.main.async { @Sendable in
+                    delegate?.didReceive(bundle)
+                    for el in bundle.elements {
+                        self.sendToDelegate(el)
                     }
-                } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + bundle.timetag.secondsSinceNow, execute: {
-                        self.delegate?.didReceive(bundle)
-                        for element in bundle.elements {
-                            self.sendToDelegate(element)
-                        }
-                    })
+                }
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { @Sendable in
+                    delegate?.didReceive(bundle)
+                    for el in bundle.elements {
+                        self.sendToDelegate(el)
+                    }
                 }
             }
         }
     }
-    
+
     deinit {
         _ = server.close()
     }
 }
+
+
+
