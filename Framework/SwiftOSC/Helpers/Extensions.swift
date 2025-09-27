@@ -12,7 +12,6 @@ extension Data {
     func toInt32() -> Int32 {
         // Check if the data contains enough bytes
         guard self.count >= MemoryLayout<Int32>.size else {
-            // Je kunt hier een default waarde retourneren of een fout afhandelen
             return 0
         }
         // Use withUnsafeBytes to safely read the bytes
