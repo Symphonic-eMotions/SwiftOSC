@@ -20,8 +20,7 @@ let package = Package(
         .target(
             name: "SwiftOSC",
             dependencies: ["CYSockets"],
-            path: "Framework/SwiftOSC",
-            exclude: ["Info.plist"]
-        ),
+            path: "Framework/SwiftOSC"
+        )
     ]
 )
